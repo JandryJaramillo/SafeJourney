@@ -19,6 +19,7 @@ import Mapbox, {
 import carro from "../assets/ciclista.png";
 import * as Location from "expo-location";
 import * as turf from "@turf/turf";
+import firestore from "@react-native-firebase/firestore";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -206,12 +207,50 @@ const Bicycle: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [evaluacionIniciada, location]);
-
-  const finalizarEvaluacion = () => {
+  
+  const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
-    Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${puntaje}/100`);
-    setPuntaje(100); // Reiniciar el puntaje para la próxima evaluación
+    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
+  
+    // Define los errores a registrar
+    const errores: string[] = [];
+    const mensajeCiclovia = puntaje < 100 ? "Salir de la ciclovía" : null;
+    if (mensajeCiclovia) errores.push(mensajeCiclovia);
+  
+    try {
+      const evaluacionesRef = firestore().collection("evaluaciones");
+      const docRef = evaluacionesRef.doc(fechaHoy);
+  
+      // Verificar si ya existe un documento para la fecha actual
+      const docSnap = await docRef.get();
+  
+      if (docSnap.exists) {
+        // Actualizamos puntajes y errores si el documento ya existe
+        await docRef.update({
+          puntajes: firestore.FieldValue.arrayUnion(puntaje),
+          errores: firestore.FieldValue.arrayUnion(...errores),
+        });
+      } else {
+        // Creamos un nuevo documento con los datos
+        await docRef.set({
+          fecha: fechaHoy,
+          puntajes: [puntaje], // Creamos el array de puntajes
+          errores: errores, // Creamos el array de errores
+        });
+      }
+  
+      Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${puntaje}/100`);
+    } catch (error) {
+      console.error("Error al guardar la evaluación:", error);
+      Alert.alert(
+        "Error",
+        `No se pudo guardar la evaluación: ${error.message}`
+      );
+    }
+  
+    setPuntaje(100); // Reiniciar puntaje para la próxima evaluación
   };
+  
 
   return (
     <View

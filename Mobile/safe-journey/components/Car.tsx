@@ -18,6 +18,7 @@ import Mapbox, {
 import carro from "../assets/car.png";
 import * as Location from "expo-location";
 import Velocidad from "./Velocidad";
+import firestore from "@react-native-firebase/firestore";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -72,9 +73,48 @@ const Car: React.FC = () => {
     startTrackingLocationAndSpeed();
   }, [evaluacionIniciada]);
 
-  const finalizarEvaluacion = () => {
+  const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
-    Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${score}/100`);
+    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
+
+    try {
+      const evaluacionesRef = firestore().collection("evaluaciones");
+      const docRef = evaluacionesRef.doc(fechaHoy);
+
+      const errores = [];
+      const velocidadMaxima = 50;
+
+      if (speed > velocidadMaxima) {
+        errores.push(`Exceso de velocidad: ${speed} km/h`);
+      }
+
+      // Crear un mensaje de resumen de errores
+      const resumenErrores = errores.join("\n");
+
+      // Verificar si ya existe un documento para la fecha actual
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        // Actualizamos el array de puntajes si ya existe un documento para esa fecha
+        await docRef.update({
+          puntajes: firestore.FieldValue.arrayUnion(score),
+          errores: firestore.FieldValue.arrayUnion(resumenErrores),
+        });
+      } else {
+        // Creamos un nuevo documento para la fecha si no existe
+        await docRef.set({
+          fecha: fechaHoy,
+          puntajes: [score], // Creamos el array con el puntaje actual
+          errores: [resumenErrores], // Guardamos el error si lo hay
+        });
+      }
+
+      Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${score}/100`);
+    } catch (error) {
+      console.error("Error al guardar la evaluación:", error);
+      Alert.alert("Error", `No se pudo guardar la evaluación: ${error.message}`);
+    }
+
     setScore(100); // Reiniciar el puntaje para la próxima evaluación
   };
 

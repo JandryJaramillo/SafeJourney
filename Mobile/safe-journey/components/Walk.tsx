@@ -74,7 +74,7 @@ const Walk: React.FC = () => {
   useEffect(() => {
     fetchCrosswalks();
   }, []);
-  
+  /*
   //Para saber coordenadas de elementos en el mapa
   const handleMapPress = async (event: any) => {
     const { geometry } = event;
@@ -85,7 +85,7 @@ const Walk: React.FC = () => {
       `Longitud: ${longitude}, Latitud: ${latitude}`
     );
   };
-/*  
+  */
   useEffect(() => {
     const startTrackingLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -113,7 +113,7 @@ const Walk: React.FC = () => {
 
     startTrackingLocation();
   }, []);
-*/
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -131,11 +131,49 @@ const Walk: React.FC = () => {
     };
   }, [evaluacionIniciada, location]);
 
-  const finalizarEvaluacion = () => {
-    setEvaluacionIniciada(false);
+  const finalizarEvaluacion = async () => {
+  setEvaluacionIniciada(false);
+  const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
+
+  // Define los errores a registrar
+  const errores: string[] = [];
+  const mensajeCiclovia = puntaje < 100 ? "No usar el paso cebra" : null;
+  if (mensajeCiclovia) errores.push(mensajeCiclovia);
+
+  try {
+    const evaluacionesRef = firestore().collection("evaluaciones");
+    const docRef = evaluacionesRef.doc(fechaHoy);
+
+    // Verificar si ya existe un documento para la fecha actual
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      // Si el documento ya existe, añadimos todos los errores
+      await docRef.update({
+        puntajes: firestore.FieldValue.arrayUnion(puntaje),
+        errores: firestore.FieldValue.arrayUnion(...errores),
+      });
+    } else {
+      // Si no existe el documento, lo creamos con los errores y puntajes actuales
+      await docRef.set({
+        fecha: fechaHoy,
+        puntajes: [puntaje], // Creamos el array de puntajes
+        errores: errores, // Creamos el array de errores
+      });
+    }
+
     Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${puntaje}/100`);
-    setPuntaje(100); // Reiniciar el puntaje para la próxima evaluación
-  };
+  } catch (error) {
+    console.error("Error al guardar la evaluación:", error);
+    Alert.alert(
+      "Error",
+      `No se pudo guardar la evaluación: ${error.message}`
+    );
+  }
+
+  setPuntaje(100); // Reiniciar puntaje para la próxima evaluación
+};
+
 
   return (
     <View
@@ -157,7 +195,7 @@ const Walk: React.FC = () => {
           pitchEnabled={true}
           styleURL="mapbox://styles/spocks/cm298d95s008x01pb82mm0dhv"
           rotateEnabled={true}
-          onPress={handleMapPress} // ubicaciones dando click
+          //onPress={handleMapPress} // ubicaciones dando click
         >
           <Images images={{ peatonIcon: peaton }} />
           <Camera
