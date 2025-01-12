@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     textAlign: "center",
     fontWeight: "bold",
+    top: 20,
   },
   signImage: {
     width: "100%",

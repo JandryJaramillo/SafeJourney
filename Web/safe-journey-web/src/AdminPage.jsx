@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "./fb";
 import { doc, getDoc } from "firebase/firestore";
-import "./styles.css";
+import "./admin.css";
 
 export function AdminPage() {
   const navigate = useNavigate();

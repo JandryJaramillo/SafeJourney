@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, FlatList, Pressable, StatusBar, Alert } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Pressable,
+  StatusBar,
+  Alert,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
+import Icon from "react-native-vector-icons/Ionicons";
 
 export function Bitacora() {
   const insets = useSafeAreaInsets();
@@ -14,16 +23,26 @@ export function Bitacora() {
       try {
         const evaluacionesRef = firestore().collection("evaluaciones");
         const snapshot = await evaluacionesRef.get();
+
         const evaluacionesData = snapshot.docs.map((doc) => {
           const data = doc.data();
           const fecha = doc.id; // Fecha almacenada como el ID del documento
 
-          // Calcular el promedio de las puntuaciones
-          const puntuaciones = data.puntajes || [];
-          const promedio = puntuaciones.reduce((acc, score) => acc + score, 0) / puntuaciones.length;
-          const puntuacionFinal = isNaN(promedio) ? 0 : promedio; // Asegurarse de que sea un número
+          // Obtener los puntajes procesados (remover anotaciones como "(2)")
+          const puntuaciones = (data.puntajes || []).map((score) => {
+            const match = score.match(/^(\d+)/); // Extraer solo el número inicial
+            return match ? parseInt(match[1], 10) : 0; // Convertir a número o usar 0 si no coincide
+          });
 
-          return { fecha, puntuacion: promedio }; // Guardar promedio como número
+          // Calcular el promedio de los puntajes procesados
+          const promedio =
+            puntuaciones.reduce((acc, score) => acc + score, 0) /
+            puntuaciones.length;
+
+          return {
+            fecha,
+            puntuacion: isNaN(promedio) ? 0 : promedio, // Asegurarse de que sea un número
+          };
         });
 
         setData(
@@ -46,13 +65,16 @@ export function Bitacora() {
   // Función para comparar los promedios
   const handleCompararPromedios = () => {
     if (promedios.length < 2) {
-      Alert.alert("Información insuficiente", "Se necesitan al menos 2 evaluaciones para comparar.");
+      Alert.alert(
+        "Información insuficiente",
+        "Se necesitan al menos 2 evaluaciones para comparar."
+      );
       return;
     }
-  
+
     let mejoras = 0;
     let empeoramientos = 0;
-  
+
     // Analizar tendencia
     for (let i = 1; i < promedios.length; i++) {
       const diferencia = promedios[i] - promedios[i - 1];
@@ -62,7 +84,7 @@ export function Bitacora() {
         empeoramientos++;
       }
     }
-  
+
     // Determinar tendencia general
     if (mejoras > empeoramientos) {
       Alert.alert(
@@ -81,14 +103,24 @@ export function Bitacora() {
       );
     }
   };
-  
 
   const renderItem = ({ item }) => (
-    <Link asChild href={`/bitacoraDetx?fecha=${item.fecha}&puntuacion=${item.puntuacion}`}>
+    <Link
+      asChild
+      href={`/bitacoraDetx?fecha=${item.fecha}&puntuacion=${item.puntuacion}`}
+    >
       <Pressable>
         <View style={styles.row}>
           <Text style={styles.cell}>{item.fecha}</Text>
-          <Text style={styles.cell}>{item.puntuacion}</Text>
+          <View style={styles.progressContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                { width: `${parseFloat(item.puntuacion)}%` }, // Ajustar el ancho según el puntaje
+              ]}
+            />
+            <Text style={styles.progressText}>{item.puntuacion}</Text>
+          </View>
         </View>
       </Pressable>
     </Link>
@@ -106,6 +138,11 @@ export function Bitacora() {
       }}
     >
       <StatusBar barStyle={"dark-content"} backgroundColor="#FFF" />
+      <Link asChild href="/profilex">
+        <Pressable style={styles.backIcon}>
+          <Icon name="arrow-back-circle-outline" size={36} color="#333" />
+        </Pressable>
+      </Link>
       <View style={styles.table}>
         <View style={styles.rowHeader}>
           <Text style={styles.headerCell}>FECHA</Text>
@@ -121,36 +158,39 @@ export function Bitacora() {
         <Pressable style={styles.button} onPress={handleCompararPromedios}>
           <Text style={styles.buttontxt}>COMPARAR PROMEDIOS</Text>
         </Pressable>
-        <Link asChild href="/profilex">
-          <Pressable style={styles.button}>
-            <Text style={styles.buttontxt}>REGRESAR</Text>
-          </Pressable>
-        </Link>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backIcon: {
+    position: "absolute",
+    top: 40,
+    right: 30,
+    zIndex: 1,
+  },
   table: {
     borderWidth: 1,
     borderColor: "#000",
     backgroundColor: "#FFFFFF",
     width: "80%",
     maxHeight: 400,
+    marginTop: 50,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#000",
+    borderBottomColor: "#DDD",
   },
   rowHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 10,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#CEE3FF",
     borderBottomWidth: 1,
   },
   cell: {
@@ -161,6 +201,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     width: "50%",
     textAlign: "center",
+  },
+  progressContainer: {
+    flex: 1,
+    height: 25,
+    backgroundColor: "#CEE3FF",
+    borderRadius: 5,
+    justifyContent: "center",
+    position: "relative",
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  progressBar: {
+    position: "absolute",
+    height: "100%",
+    backgroundColor: "#7BDFF2",
+    borderRadius: 5,
+  },
+  progressText: {
+    fontWeight: "bold",
+    textAlign: "center",
+    zIndex: 1,
   },
   buttonContainer: {
     justifyContent: "center",

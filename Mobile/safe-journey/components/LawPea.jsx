@@ -56,10 +56,6 @@ const LawCon = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Leyes para peatones</Text>
-      <Image
-        source={require("../assets/peatones.png")}
-        style={styles.image}
-      />
       <View style={styles.list}>
         <FlatList
           data={laws}

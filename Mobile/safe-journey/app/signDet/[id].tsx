@@ -40,7 +40,7 @@ export default function SignDet() {
       }
     };
 
-    fetchSignal(); 
+    fetchSignal();
   }, [id]);
 
   if (loading) {
@@ -54,7 +54,11 @@ export default function SignDet() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{signal.name}</Text>
-      <Image source={{ uri: signal.imageUrl }} style={styles.image} />
+      <Image
+        source={{ uri: signal.imageUrl }}
+        style={styles.image}
+        resizeMode="contain" // Mantiene la relación de aspecto y adapta la imagen al espacio disponible
+      />
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>{signal.description}</Text>
       </View>
@@ -75,12 +79,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
-    top: 20,
+    marginTop: 20,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: "90%",
+    height: 200,
     marginBottom: 20,
     marginTop: 10,
   },
@@ -93,11 +96,12 @@ const styles = StyleSheet.create({
   },
   description: { fontSize: 16, color: "#333" },
   backButton: {
-    marginTop: 20,
-    paddingVertical: 10,
+    top: 10,
     paddingHorizontal: 20,
     backgroundColor: "#7BDFF2",
     borderRadius: 5,
+    height: 40,
+    textAlign: "center",
   },
-  buttonText: { color: "#333", fontWeight: "bold" },
+  buttonText: { color: "#333", fontWeight: "bold", textAlign: "center" },
 });

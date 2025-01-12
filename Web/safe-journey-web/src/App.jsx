@@ -5,7 +5,6 @@ import { AdminPage } from "./AdminPage";
 import { AddLaws } from "./AddLaws";
 import { AddSignals } from "./AddSignals";
 import { AddCrosswalks } from "./AddCrosswalks";
-import { AddBikeLanes } from "./AddBikeLanes";
 
 function App() {
   return (
@@ -18,7 +17,6 @@ function App() {
         <Route path="/add-laws" element={<AddLaws />} />
         <Route path="/add-signals" element={<AddSignals />} />
         <Route path="/add-crosswalks" element={<AddCrosswalks />} />
-        <Route path="/add-bike-lanes" element={<AddBikeLanes />} />
       </Routes>
     </BrowserRouter>
   );

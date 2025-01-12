@@ -2,47 +2,76 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
 
 export function BitacoraDet() {
   const { fecha } = useLocalSearchParams();
   const [puntuacionPromedio, setPuntuacionPromedio] = useState(0);
   const [detalles, setDetalles] = useState([]);
 
-  // Función para obtener los registros de la base de datos y calcular el promedio de puntuaciones
   useEffect(() => {
-    async function fetchData() {
-      const evaluationsRef = firestore().collection("evaluaciones");
-      
-      // Consultar los documentos de la colección 'evaluaciones' donde la fecha coincida
-      const snapshot = await evaluationsRef.where("fecha", "==", fecha).get();
+    const fetchData = async () => {
+      try {
+        const evaluationsRef = firestore().collection("evaluaciones");
+        const snapshot = await evaluationsRef
+          .where(firestore.FieldPath.documentId(), "==", fecha)
+          .get();
 
-      let totalPuntuacion = 0;
-      let count = 0;
-      let detallesArray = [];
+        let totalPuntuacion = 0;
+        let count = 0;
+        let detallesArray = [];
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Calcular el promedio de puntuaciones
-        data.puntajes.forEach((puntaje, index) => {
-          totalPuntuacion += puntaje;
-          detallesArray.push({
-            error: data.errores[index],  // Obtener el error correspondiente
-            puntaje: puntaje
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+
+          const puntajesProcesados = (data.puntajes || []).map((puntaje) => {
+            const match = puntaje.toString().match(/^(\d+)/);
+            return match ? parseInt(match[1], 10) : 0;
           });
-          count++;
-        });
-      });
 
-      setPuntuacionPromedio(count > 0 ? totalPuntuacion / count : 0);
-      setDetalles(detallesArray);
-    }
+          puntajesProcesados.forEach((puntaje, index) => {
+            totalPuntuacion += puntaje;
+            detallesArray.push({
+              detalle: data.detalles?.[index] || "Sin detalle registrado",
+              puntaje: puntaje,
+            });
+            count++;
+          });
+        });
+
+        setPuntuacionPromedio(count > 0 ? totalPuntuacion / count : 0);
+        setDetalles(detallesArray);
+      } catch (error) {
+        console.error("Error al obtener los detalles:", error);
+      }
+    };
 
     fetchData();
   }, [fecha]);
 
+  const promedioProgressWidth = (puntuacionPromedio / 100) * 100;
+
+  // Función para determinar el ícono según la categoría
+  const getIconByCategory = (detalle) => {
+    if (detalle.toLowerCase().includes("ciclovía")) {
+      return "bicycle"; // Icono para ciclistas
+    } else if (detalle.toLowerCase().includes("cebra")) {
+      return "walk"; // Icono para peatones
+    } else if (detalle.toLowerCase().includes("velocidad")) {
+      return "car"; // Icono para conductores
+    } else {
+      return "checkmark-circle"; // Icono genérico
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Tabla con la fecha y puntuación promedio */}
+      <Link asChild href="/bitacorax">
+        <Pressable style={styles.iconContainer}>
+          <Ionicons name="arrow-back-circle-outline" size={36} color="black" />
+        </Pressable>
+      </Link>
+
       <View style={styles.table}>
         <View style={styles.rowHeader}>
           <Text style={styles.headerCell}>FECHA</Text>
@@ -50,34 +79,65 @@ export function BitacoraDet() {
         </View>
         <View style={styles.row}>
           <Text style={styles.cell}>{fecha}</Text>
-          <Text style={styles.cell}>{puntuacionPromedio.toFixed(2)}</Text>
+          <View style={styles.progressContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                { width: `${promedioProgressWidth}%` },
+              ]}
+            />
+            <Text style={styles.progressText}>
+              {puntuacionPromedio.toFixed(2)}/100
+            </Text>
+          </View>
         </View>
       </View>
 
-      {/* Detalles de la evaluación usando FlatList */}
       <View style={styles.details}>
-        <Text style={styles.detailsTitle}>DETALLES:</Text>
         {detalles.length > 0 ? (
           <FlatList
             data={detalles}
             keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <Text style={styles.detailsText}>
-                - {item.error} - Puntaje: {item.puntaje}
-              </Text>
+            ListHeaderComponent={() => (
+              <View style={styles.rowHeader}>
+                <Text style={styles.headerCell}>PUNTOS</Text>
+                <Text style={styles.headerCell}>DETALLES</Text>
+              </View>
             )}
+            renderItem={({ item }) => {
+              const errorMatch = item.detalle.match(/Errores:\s*(.*)/);
+              const errores = errorMatch ? errorMatch[1] : "Ninguno";
+              const progressWidth = (item.puntaje / 100) * 100;
+              const iconName = getIconByCategory(item.detalle);
+
+              return (
+                <View style={styles.row}>
+                  <View style={styles.progressContainer}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { width: `${progressWidth}%` },
+                      ]}
+                    />
+                    <Text style={styles.progressText}>{item.puntaje}/100</Text>
+                  </View>
+                  <Text style={styles.cell}>{errores}</Text>
+                  <Ionicons
+                    name={iconName}
+                    size={24}
+                    color="#555"
+                    style={styles.icon}
+                  />
+                </View>
+              );
+            }}
           />
         ) : (
-          <Text style={styles.detailsText}>No se encontraron detalles para esta fecha.</Text>
+          <Text style={styles.detailsText}>
+            No se encontraron detalles para esta fecha.
+          </Text>
         )}
       </View>
-
-      {/* Botón para regresar */}
-      <Link asChild href="/bitacorax">
-        <Pressable style={styles.button}>
-          <Text style={styles.buttontxt}>REGRESAR</Text>
-        </Pressable>
-      </Link>
     </View>
   );
 }
@@ -86,68 +146,86 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F2F9FC",
-    justifyContent: "center",
-    alignItems: "center",
     padding: 20,
+    alignItems: "center",
+  },
+  iconContainer: {
+    position: "absolute",
+    top: 40,
+    right: 30,
   },
   table: {
     borderWidth: 1,
     borderColor: "#000",
     backgroundColor: "#FFFFFF",
-    width: "80%",
+    width: "90%",
     marginBottom: 20,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#000",
+    marginTop: 70,
+    alignSelf: "center",
   },
   rowHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 10,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#CEE3FF",
     borderBottomWidth: 1,
+    borderBottomColor: "#000",
   },
-  cell: {
-    width: "50%",
-    textAlign: "center",
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   headerCell: {
+    width: "45%",
     fontWeight: "bold",
-    width: "50%",
     textAlign: "center",
+    color: "#333",
+  },
+  cell: {
+    width: "40%",
+    textAlign: "center",
+    color: "#555",
+  },
+  icon: {
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  progressContainer: {
+    flex: 1,
+    height: 25,
+    backgroundColor: "#CEE3FF",
+    borderRadius: 5,
+    justifyContent: "center",
+    position: "relative",
+    marginHorizontal: 10,
+  },
+  progressBar: {
+    position: "absolute",
+    height: "100%",
+    backgroundColor: "#7BDFF2",
+    borderRadius: 5,
+  },
+  progressText: {
+    fontWeight: "bold",
+    textAlign: "center",
+    zIndex: 1,
   },
   details: {
+    width: "90%",
+    height: "60%",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#000",
-    backgroundColor: "#FFFFFF",
-    width: "80%",
-    padding: 10,
-    height: "60%",
-    marginTop: 20,
-  },
-  detailsTitle: {
-    fontWeight: "bold",
-    marginBottom: 10,
+    borderRadius: 5,
+    alignSelf: "center",
   },
   detailsText: {
-    marginBottom: 5,
-  },
-  button: {
-    backgroundColor: "#7BDFF2",
-    borderRadius: 30,
-    marginTop: 20,
-    width: 200,
-    height: 45,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttontxt: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "black",
+    textAlign: "center",
+    color: "#555",
+    padding: 10,
   },
 });

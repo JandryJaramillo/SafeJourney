@@ -1,13 +1,6 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef } from "react";
-import {
-  StyleSheet,
-  View,
-  StatusBar,
-  Text,
-  Pressable,
-  Alert,
-} from "react-native";
+import { StyleSheet, View, StatusBar, Text, Pressable } from "react-native";
 import Mapbox, {
   Camera,
   MapView,
@@ -20,6 +13,7 @@ import carro from "../assets/ciclista.png";
 import * as Location from "expo-location";
 import * as turf from "@turf/turf";
 import firestore from "@react-native-firebase/firestore";
+import Toast from "react-native-toast-message";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -131,7 +125,7 @@ const Bicycle: React.FC = () => {
   const [evaluacionIniciada, setEvaluacionIniciada] = useState(false);
   const [puntaje, setPuntaje] = useState(100);
   const mapRef = useRef<Mapbox.MapView>(null);
-
+  const [startTime, setStartTime] = useState<Date | null>(null);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -166,10 +160,11 @@ const Bicycle: React.FC = () => {
 
   const evaluarCercania = () => {
     if (!location) {
-      Alert.alert(
-        "Ubicación no disponible",
-        "Espere a que se obtenga su ubicación."
-      );
+      Toast.show({
+        type: "info",
+        text1: "Ubicación no disponible",
+        text2: "Espere a que se obtenga su ubicación.",
+      });
       return;
     }
 
@@ -184,10 +179,18 @@ const Bicycle: React.FC = () => {
     });
 
     if (isInside) {
-      Alert.alert("¡Correcto!", "Está dentro de la ciclovía.");
+      Toast.show({
+        type: "success",
+        text1: "¡Correcto!",
+        text2: "Está dentro de la ciclovía.",
+      });
     } else {
-      Alert.alert("¡Atención!", "Está fuera de la ciclovía.");
-      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 10, 0)); // Disminuye 10 puntos, con límite de 0
+      Toast.show({
+        type: "error",
+        text1: "¡Atención!",
+        text2: "Está fuera de la ciclovía.",
+      });
+      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 10, 0));
     }
   };
 
@@ -195,10 +198,11 @@ const Bicycle: React.FC = () => {
     let interval: NodeJS.Timeout | null = null;
 
     if (evaluacionIniciada) {
-      evaluarCercania(); // Evalúa inmediatamente al iniciar
+      setStartTime(new Date());
+      evaluarCercania();
       interval = setInterval(() => {
         evaluarCercania();
-      }, 10000); // Evaluaciones cada 10 segundos
+      }, 10000);
     } else if (interval) {
       clearInterval(interval);
     }
@@ -207,50 +211,87 @@ const Bicycle: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [evaluacionIniciada, location]);
-  
+
   const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
-    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
-  
-    // Define los errores a registrar
+
+    const endTime = new Date();
+    const duration = startTime
+      ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
+      : 0;
     const errores: string[] = [];
     const mensajeCiclovia = puntaje < 100 ? "Salir de la ciclovía" : null;
     if (mensajeCiclovia) errores.push(mensajeCiclovia);
-  
+
+    // Crear el string con puntaje y errores
+    const detalles = `Puntaje: ${puntaje}/100, Errores: ${errores.join(
+      ", "
+    )}, Duración: ${duration}s`;
+    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
+
     try {
       const evaluacionesRef = firestore().collection("evaluaciones");
-      const docRef = evaluacionesRef.doc(fechaHoy);
-  
-      // Verificar si ya existe un documento para la fecha actual
+      const docRef = evaluacionesRef.doc(fechaHoy); // Usamos la fecha como ID del documento
+
+      // Obtener el documento de la fecha para verificar los detalles existentes
       const docSnap = await docRef.get();
-  
+
       if (docSnap.exists) {
-        // Actualizamos puntajes y errores si el documento ya existe
+        // Si el documento ya existe, obtenemos los detalles actuales
+        const data = docSnap.data();
+        let detallesExistentes = data?.detalles || [];
+        let puntajesExistentes = data?.puntajes || [];
+
+        // Verificar si el detalle ya existe y crear un contador para evitar duplicados
+        let contadorDetalles = 1;
+        let nuevoDetalle = detalles;
+
+        while (detallesExistentes.includes(nuevoDetalle)) {
+          contadorDetalles++;
+          nuevoDetalle = `${contadorDetalles}. ${detalles}`;
+        }
+
+        // Agregar el nuevo detalle con el contador
         await docRef.update({
-          puntajes: firestore.FieldValue.arrayUnion(puntaje),
-          errores: firestore.FieldValue.arrayUnion(...errores),
+          detalles: firestore.FieldValue.arrayUnion(nuevoDetalle),
+        });
+
+        // Verificar si la puntuación ya existe y crear un contador para las puntuaciones
+        let contadorPuntajes = 1;
+        let nuevoPuntaje = `${puntaje}`;
+
+        while (puntajesExistentes.includes(nuevoPuntaje)) {
+          contadorPuntajes++;
+          nuevoPuntaje = `${puntaje} (${contadorPuntajes})`;
+        }
+
+        // Agregar la nueva puntuación con el contador
+        await docRef.update({
+          puntajes: firestore.FieldValue.arrayUnion(nuevoPuntaje),
         });
       } else {
-        // Creamos un nuevo documento con los datos
+        // Si el documento no existe, lo creamos con el primer detalle y puntuación
         await docRef.set({
-          fecha: fechaHoy,
-          puntajes: [puntaje], // Creamos el array de puntajes
-          errores: errores, // Creamos el array de errores
+          detalles: [`${detalles}`],
+          puntajes: [`${puntaje}`],
         });
       }
-  
-      Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${puntaje}/100`);
+
+      Toast.show({
+        type: "success",
+        text1: "Evaluación registrada",
+        text2: `Tu puntaje final es: ${puntaje}/100. Duración: ${duration}s`,
+      });
     } catch (error) {
-      console.error("Error al guardar la evaluación:", error);
-      Alert.alert(
-        "Error",
-        `No se pudo guardar la evaluación: ${error.message}`
-      );
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: `No se pudo guardar la evaluación: ${error.message}`,
+      });
     }
-  
-    setPuntaje(100); // Reiniciar puntaje para la próxima evaluación
+
+    setPuntaje(100); // Reiniciar puntaje
   };
-  
 
   return (
     <View
@@ -325,11 +366,12 @@ const Bicycle: React.FC = () => {
           {evaluacionIniciada ? "FINALIZAR EVALUACIÓN" : "EMPEZAR EVALUACIÓN"}
         </Text>
       </Pressable>
+
+      {/* Toast Message */}
+      <Toast />
     </View>
   );
 };
-
-export default Bicycle;
 
 const styles = StyleSheet.create({
   mapCont: {
@@ -355,3 +397,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+export default Bicycle;

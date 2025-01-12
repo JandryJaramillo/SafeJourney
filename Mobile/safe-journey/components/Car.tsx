@@ -1,13 +1,5 @@
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  StatusBar,
-  Text,
-  Pressable,
-  Alert,
-} from "react-native";
+import { StyleSheet, View, StatusBar, Text, Pressable } from "react-native";
 import Mapbox, {
   Camera,
   MapView,
@@ -15,23 +7,21 @@ import Mapbox, {
   SymbolLayer,
   ShapeSource,
 } from "@rnmapbox/maps";
-import carro from "../assets/car.png";
 import * as Location from "expo-location";
+import Toast from "react-native-toast-message";
 import Velocidad from "./Velocidad";
 import firestore from "@react-native-firebase/firestore";
+import carro from "../assets/car.png";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
 
 const Car: React.FC = () => {
-  const insets = useSafeAreaInsets();
   const [speed, setSpeed] = useState(0);
   const [evaluacionIniciada, setEvaluacionIniciada] = useState(false);
   const [score, setScore] = useState(100);
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  }>({
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [location, setLocation] = useState({
     latitude: -3.9954684994999354,
     longitude: -79.1983461270052,
   });
@@ -40,10 +30,11 @@ const Car: React.FC = () => {
     const startTrackingLocationAndSpeed = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permisos denegados",
-          "Se necesitan permisos de ubicación para usar esta funcionalidad."
-        );
+        Toast.show({
+          type: "error",
+          text1: "Permisos Denegados",
+          text2: "Se necesitan permisos de ubicación.",
+        });
         return;
       }
 
@@ -58,13 +49,15 @@ const Car: React.FC = () => {
           setLocation({ latitude, longitude });
           const speedInKmh = (speed || 0) * 3.6; // Convertir m/s a km/h
           setSpeed(speedInKmh);
+          setStartTime(new Date());
 
           if (evaluacionIniciada && speedInKmh > 50) {
             setScore((prevScore) => Math.max(prevScore - 10, 0)); // Reducir puntaje
-            Alert.alert(
-              "Advertencia de Velocidad",
-              "Está excediendo el límite de velocidad, reduzca su velocidad por favor"
-            );
+            Toast.show({
+              type: "warning",
+              text1: "Advertencia de Velocidad",
+              text2: "Está excediendo el límite de velocidad.",
+            });
           }
         }
       );
@@ -75,60 +68,84 @@ const Car: React.FC = () => {
 
   const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
+
+    const endTime = new Date();
+    const duration = startTime
+      ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
+      : 0;
+
+    const errores: string[] = [];
+    const mensaje =
+      speed > 50 ? `Exceso de velocidad: ${speed.toFixed(1)} km/h` : null;
+    if (mensaje) errores.push(mensaje);
+
+    const detalles = `Puntaje: ${score}/100, Errores: ${errores.join(
+      ", "
+    )}, Duración: ${duration}s`;
     const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
 
     try {
       const evaluacionesRef = firestore().collection("evaluaciones");
       const docRef = evaluacionesRef.doc(fechaHoy);
 
-      const errores = [];
-      const velocidadMaxima = 50;
-
-      if (speed > velocidadMaxima) {
-        errores.push(`Exceso de velocidad: ${speed} km/h`);
-      }
-
-      // Crear un mensaje de resumen de errores
-      const resumenErrores = errores.join("\n");
-
-      // Verificar si ya existe un documento para la fecha actual
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        // Actualizamos el array de puntajes si ya existe un documento para esa fecha
+        // Si el documento ya existe, obtenemos los detalles actuales
+        const data = docSnap.data();
+        const detallesExistentes = data?.detalles || [];
+        const puntajesExistentes = data?.puntajes || [];
+
+        // Enumerar los detalles para evitar duplicados
+        let contadorDetalles = 1;
+        let nuevoDetalle = detalles;
+
+        while (detallesExistentes.includes(nuevoDetalle)) {
+          contadorDetalles++;
+          nuevoDetalle = `${contadorDetalles}. ${detalles}`;
+        }
+
+        // Enumerar los puntajes para evitar duplicados
+        let contadorPuntajes = 1;
+        let nuevoPuntaje = `${score}`;
+
+        while (puntajesExistentes.includes(nuevoPuntaje)) {
+          contadorPuntajes++;
+          nuevoPuntaje = `${score} (${contadorPuntajes})`;
+        }
+
+        // Actualizar el documento con los nuevos datos
         await docRef.update({
-          puntajes: firestore.FieldValue.arrayUnion(score),
-          errores: firestore.FieldValue.arrayUnion(resumenErrores),
+          detalles: firestore.FieldValue.arrayUnion(nuevoDetalle),
+          puntajes: firestore.FieldValue.arrayUnion(nuevoPuntaje),
         });
       } else {
-        // Creamos un nuevo documento para la fecha si no existe
+        // Si el documento no existe, lo creamos con el primer detalle y puntaje
         await docRef.set({
-          fecha: fechaHoy,
-          puntajes: [score], // Creamos el array con el puntaje actual
-          errores: [resumenErrores], // Guardamos el error si lo hay
+          detalles: [`${detalles}`],
+          puntajes: [`${score}`],
         });
       }
 
-      Alert.alert("Evaluación finalizada", `Tu puntaje final es: ${score}/100`);
+      Toast.show({
+        type: "success",
+        text1: "Evaluación Finalizada",
+        text2: `Tu puntaje final es: ${score}/100. Duración: ${duration}s`,
+      });
     } catch (error) {
       console.error("Error al guardar la evaluación:", error);
-      Alert.alert("Error", `No se pudo guardar la evaluación: ${error.message}`);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se pudo guardar la evaluación.",
+      });
     }
-
-    setScore(100); // Reiniciar el puntaje para la próxima evaluación
+    setStartTime(null);
+    setScore(100);
   };
 
   return (
-    <View
-      style={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        flex: 1,
-        backgroundColor: "#FFFF",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <View style={styles.container}>
       <StatusBar barStyle={"dark-content"} backgroundColor="#FFF" />
       <View style={styles.speedometer}>
         <Velocidad speed={speed} />
@@ -186,13 +203,18 @@ const Car: React.FC = () => {
           {evaluacionIniciada ? "FINALIZAR EVALUACIÓN" : "EMPEZAR EVALUACIÓN"}
         </Text>
       </Pressable>
+      <Toast />
     </View>
   );
 };
 
-export default Car;
-
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   mapCont: {
     height: 770,
     width: 410,
@@ -224,3 +246,5 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 });
+
+export default Car;
