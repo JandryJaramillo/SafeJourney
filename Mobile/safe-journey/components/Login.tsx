@@ -6,12 +6,14 @@ import {
   Pressable,
   StatusBar,
   Alert,
+  Image
 } from "react-native";
 import React, { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import Logo from "../assets/logo.png";
 
 export function Login() {
   const insets = useSafeAreaInsets();
@@ -58,7 +60,8 @@ export function Login() {
         alignItems: "center",
       }}
     >
-      <StatusBar barStyle={"dark-content"} />
+      <StatusBar barStyle={"light-content"} />
+      <Image style={styles.logo} source={Logo} />
       <Text style={styles.title}>SafeJourney</Text>
       <Text style={styles.subtitle}>
         Ingresa tus datos para identificarte en el sistema
@@ -98,12 +101,17 @@ const styles = StyleSheet.create({
     color: "#FFFF",
     fontSize: 42,
     fontWeight: "bold",
-    marginBottom: 37,
+    marginBottom: 15,
+  },
+  logo: {
+    height: 150,
+    width: 150,
+    marginBottom: 10
   },
   subtitle: {
     color: "#FFFF",
     fontSize: 20,
-    marginBottom: 56,
+    marginBottom: 25,
     textAlign: "center",
     width: 250,
   },
@@ -118,9 +126,8 @@ const styles = StyleSheet.create({
     width: 264,
   },
   button: {
-    backgroundColor: "#7BDFF2",
+    backgroundColor: "#52C5E2",
     borderRadius: 30,
-    marginTop: 64,
     width: 155,
     height: 40,
   },
@@ -131,7 +138,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 64,
+    marginTop: 10,
     width: 330,
   },
 });

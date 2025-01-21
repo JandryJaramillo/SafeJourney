@@ -5,19 +5,18 @@ import {
   Image,
   StyleSheet,
   Pressable,
-  ScrollView,
   FlatList,
 } from "react-native";
 import { Link } from "expo-router";
 import { useUserRole } from "../hooks/useUserRole";
 import firestore from "@react-native-firebase/firestore";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import Logo from "../assets/logo.png";
 
 const Law = () => {
   const { role, loading } = useUserRole();
   const [recentLaws, setRecentLaws] = useState([]);
 
-  // Cargar las leyes de tránsito recientes
   useEffect(() => {
     const fetchLaws = async () => {
       try {
@@ -46,17 +45,22 @@ const Law = () => {
 
   const renderLaw = ({ item }) => (
     <Link asChild href={`/lawDet/${item.id}`}>
-      <Pressable style={styles.rowL}>
-        <Text style={styles.textL}>{item.name}</Text>
+      <Pressable style={styles.signalContainer}>
+        <Text style={styles.signalText}>{item.name}</Text>
       </Pressable>
     </Link>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Leyes de Tránsito</Text>
+      <View style={styles.header}>
+        <Image style={styles.logo} source={Logo} />
+        <Text style={styles.title}>EDUCACIÓN VIAL</Text>
+      </View>
+
       {recentLaws.length > 0 && (
         <View style={styles.recentLawsContainer}>
+          <Text style={styles.titulo}>Leyes de tránsito</Text>
           <FlatList
             data={recentLaws}
             horizontal
@@ -66,30 +70,60 @@ const Law = () => {
           />
         </View>
       )}
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.row}>
+
+      <View style={styles.scrollContainer}>
+        <Text style={styles.sectionTitle}>Categorías</Text>
+        <View style={styles.categoryList}>
+          <Link asChild href="/lawPeax">
+            <Pressable style={styles.categoryItem}>
+              <View style={styles.iconContainer}>
+                <Icon name="walking" size={40} color="#fff" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.categoryTitle}>
+                  Leyes de tránsito para los peatones
+                </Text>
+                <Text style={styles.categoryDescription}>
+                  Encontraras las leyes de tránsito relacionados a los
+                  peatones.
+                </Text>
+              </View>
+            </Pressable>
+          </Link>
           <Link asChild href="/lawConx">
-            <Pressable style={styles.hexOption}>
-              <Icon name="car" size={50} color="#333" />
-              <Text style={styles.hexText}>Conductores</Text>
+            <Pressable style={styles.categoryItem}>
+              <View style={styles.iconContainer}>
+                <Icon name="car" size={40} color="#fff" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.categoryTitle}>
+                  Leyes de tránsito para los conductores
+                </Text>
+                <Text style={styles.categoryDescription}>
+                  Encontraras las leyes de tránsito relacionadas a los
+                  conductores.
+                </Text>
+              </View>
             </Pressable>
           </Link>
           <Link asChild href="/lawCicx">
-            <Pressable style={styles.hexOption}>
-              <Icon name="bicycle" size={50} color="#333" />
-              <Text style={styles.hexText}>Ciclistas</Text>
+            <Pressable style={styles.categoryItem}>
+              <View style={styles.iconContainer}>
+                <Icon name="bicycle" size={40} color="#fff" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.categoryTitle}>
+                  Leyes de tránsito para los ciclistas
+                </Text>
+                <Text style={styles.categoryDescription}>
+                  Encontraras las leyes de tránsito relacionadas a los
+                  ciclistas.
+                </Text>
+              </View>
             </Pressable>
           </Link>
         </View>
-        <View style={styles.row}>
-          <Link asChild href="/lawPeax">
-            <Pressable style={styles.hexOption}>
-              <Icon name="walking" size={50} color="#333" />
-              <Text style={styles.hexText}>Peatones</Text>
-            </Pressable>
-          </Link>
-        </View>
-      </ScrollView>
+      </View>
 
       {role === "admin" && (
         <Link asChild href="/addLawsx">
@@ -107,106 +141,118 @@ export default Law;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F6F8FB",
+  },
+  header: {
+    backgroundColor: "#52C5E2",
+    paddingVertical: 20,
     alignItems: "center",
-    backgroundColor: "#EDF5F9",
+    height: 90,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginTop: 40,
-  },
-  recentLawsContainer: {
-    width: "100%",
+    color: "#FFF",
     marginTop: 20,
-    backgroundColor: "#CEE3FF",
-    borderColor: "black",
-    borderWidth: 1,
   },
-  rowL: {
-    borderWidth: 2,
-    borderColor: "#ccc",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: "#FFF",
-    borderRadius: 15,
-    elevation: 3,
-    margin: 10,
-    width: 120,
-    height: 120,
+  titulo: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  logo: {
+    height: 50,
+    width: 50,
+    left: 20,
+    top: 30,
+    position: "absolute",
+  },
+  scrollContainer: {
+    marginLeft: 20,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginVertical: 10,
+  },
+  categoryList: {
+    flexDirection: "column",
+    gap: 20,
+  },
+  categoryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconContainer: {
+    backgroundColor: "#41537B",
+    borderRadius: 10,
+    padding: 15,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 15,
+    width: 80,
   },
-  textL: {
+  textContainer: {
+    flex: 1,
+  },
+  categoryTitle: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#333",
+  },
+  categoryDescription: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 5,
+  },
+  recentLawsContainer: {
+    backgroundColor: "#E6F0FA",
+    borderRadius: 15,
+    padding: 10,
+    marginHorizontal: 10,
+    marginTop: 5,
+  },
+  signalContainer: {
+    marginRight: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#FFF",
+    width: 100,
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  signalText: {
+    fontSize: 14,
+    fontWeight: "bold",
     textAlign: "center",
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 20,
-    marginTop: 20,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-    width: "100%",
-  },
   button: {
-    backgroundColor: "#7BDFF2",
+    backgroundColor: "#007AFF",
     borderRadius: 30,
-    marginTop: 20,
-    width: 200,
-    height: 45,
-    justifyContent: "center",
-    alignItems: "center",
+    alignSelf: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginBottom: 20,
   },
   buttontxt: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "black",
-  },
-  hexOption: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 120,
-    height: 120,
-    backgroundColor: "#FFF",
-    borderWidth: 2,
-    borderColor: "#ccc",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    overflow: "hidden",
-    borderRadius: 15,
-  },
-  hexImage: {
-    width: "90%",
-    height: "70%",
-    resizeMode: "contain",
-    borderRadius: 10,
-  },
-  hexText: {
-    marginTop: 5,
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
+    color: "#FFF",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#EDF5F9",
+    backgroundColor: "#F6F8FB",
   },
   loadingText: {
     fontSize: 18,
-    fontWeight: "bold",
     color: "#333",
   },
 });

@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  Image,
+} from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
-import { Ionicons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/Ionicons";
+import logo from "../assets/logo.png";
 
 export function BitacoraDet() {
   const { fecha } = useLocalSearchParams();
@@ -30,9 +38,14 @@ export function BitacoraDet() {
           });
 
           puntajesProcesados.forEach((puntaje, index) => {
+            const detalleCompleto =
+              data.detalles?.[index] || "Sin detalle registrado";
+            const detalleExtraido =
+              detalleCompleto.split("Errores:")[1]?.trim() || detalleCompleto;
+
             totalPuntuacion += puntaje;
             detallesArray.push({
-              detalle: data.detalles?.[index] || "Sin detalle registrado",
+              detalle: detalleExtraido, // Información después de "Errores"
               puntaje: puntaje,
             });
             count++;
@@ -49,94 +62,67 @@ export function BitacoraDet() {
     fetchData();
   }, [fecha]);
 
-  const promedioProgressWidth = (puntuacionPromedio / 100) * 100;
-
-  // Función para determinar el ícono según la categoría
   const getIconByCategory = (detalle) => {
     if (detalle.toLowerCase().includes("ciclovía")) {
-      return "bicycle"; // Icono para ciclistas
+      return "bicycle";
     } else if (detalle.toLowerCase().includes("cebra")) {
-      return "walk"; // Icono para peatones
+      return "walk";
     } else if (detalle.toLowerCase().includes("velocidad")) {
-      return "car"; // Icono para conductores
+      return "car";
     } else {
-      return "checkmark-circle"; // Icono genérico
+      return "checkmark-circle";
     }
   };
 
   return (
     <View style={styles.container}>
-      <Link asChild href="/bitacorax">
-        <Pressable style={styles.iconContainer}>
-          <Ionicons name="arrow-back-circle-outline" size={36} color="black" />
-        </Pressable>
-      </Link>
-
-      <View style={styles.table}>
-        <View style={styles.rowHeader}>
-          <Text style={styles.headerCell}>FECHA</Text>
-          <Text style={styles.headerCell}>PUNTUACIÓN PROMEDIO</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.cell}>{fecha}</Text>
-          <View style={styles.progressContainer}>
-            <View
-              style={[
-                styles.progressBar,
-                { width: `${promedioProgressWidth}%` },
-              ]}
-            />
-            <Text style={styles.progressText}>
-              {puntuacionPromedio.toFixed(2)}/100
-            </Text>
+      <View style={styles.header}>
+        <Image source={logo} style={styles.logo} />
+        <Text style={styles.headerTitle}>DETALLE</Text>
+        <Link asChild href="/bitacorax">
+          <Pressable style={styles.backIcon}>
+            <Icon name="arrow-back-circle-outline" size={36} color="#FFF" />
+          </Pressable>
+        </Link>
+      </View>
+      <View style={styles.main}>
+        <View style={styles.summaryContainer}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Fecha de la evaluación</Text>
+            <Text style={styles.value}>{fecha}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Calificación</Text>
+            <View style={styles.scoreContainer}>
+              <Text style={styles.score}>{puntuacionPromedio.toFixed(0)}</Text>
+              <Text style={styles.scoreTotal}>/100</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.details}>
-        {detalles.length > 0 ? (
-          <FlatList
-            data={detalles}
-            keyExtractor={(item, index) => index.toString()}
-            ListHeaderComponent={() => (
-              <View style={styles.rowHeader}>
-                <Text style={styles.headerCell}>PUNTOS</Text>
-                <Text style={styles.headerCell}>DETALLES</Text>
+        <FlatList
+          data={detalles}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.detailRow}>
+              <View style={styles.progressContainer}>
+                <View
+                  style={[styles.progressBar, { width: `${item.puntaje}%` }]}
+                />
+                <Text style={styles.progressText}>{item.puntaje}/100</Text>
               </View>
-            )}
-            renderItem={({ item }) => {
-              const errorMatch = item.detalle.match(/Errores:\s*(.*)/);
-              const errores = errorMatch ? errorMatch[1] : "Ninguno";
-              const progressWidth = (item.puntaje / 100) * 100;
-              const iconName = getIconByCategory(item.detalle);
-
-              return (
-                <View style={styles.row}>
-                  <View style={styles.progressContainer}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: `${progressWidth}%` },
-                      ]}
-                    />
-                    <Text style={styles.progressText}>{item.puntaje}/100</Text>
-                  </View>
-                  <Text style={styles.cell}>{errores}</Text>
-                  <Ionicons
-                    name={iconName}
-                    size={24}
-                    color="#555"
-                    style={styles.icon}
-                  />
-                </View>
-              );
-            }}
-          />
-        ) : (
-          <Text style={styles.detailsText}>
-            No se encontraron detalles para esta fecha.
-          </Text>
-        )}
+              <Text style={styles.detailText}>{item.detalle}</Text>
+              <Icon
+                name={getIconByCategory(item.detalle)}
+                size={24}
+                color="#DABB00"
+              />
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No hay detalles registrados.</Text>
+          }
+        />
       </View>
     </View>
   );
@@ -145,87 +131,114 @@ export function BitacoraDet() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F9FC",
-    padding: 20,
-    alignItems: "center",
+    backgroundColor: "#F6F8FB",
   },
-  iconContainer: {
+  header: {
+    alignItems: "center",
+    position: "relative",
+    backgroundColor: "#52C5E2",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    height: 90,
+  },
+  backIcon: {
     position: "absolute",
     top: 40,
     right: 30,
+    zIndex: 1,
   },
-  table: {
-    borderWidth: 1,
-    borderColor: "#000",
-    backgroundColor: "#FFFFFF",
-    width: "90%",
+  headerTitle: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    top: 30,
+  },
+  logo: {
+    height: 50,
+    width: 50,
+    left: 20,
+    top: 30,
+    position: "absolute",
+  },
+  main: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  summaryContainer: {
+    backgroundColor: "#FFF",
+    borderRadius: 10,
+    padding: 15,
     marginBottom: 20,
-    marginTop: 70,
-    alignSelf: "center",
-  },
-  rowHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 10,
-    backgroundColor: "#CEE3FF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#000",
+    elevation: 2,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#DDD",
+    marginBottom: 10,
   },
-  headerCell: {
-    width: "45%",
+  label: {
+    fontSize: 16,
+    color: "#305C89",
     fontWeight: "bold",
-    textAlign: "center",
+  },
+  value: {
+    fontSize: 16,
     color: "#333",
   },
-  cell: {
-    width: "40%",
-    textAlign: "center",
-    color: "#555",
+  scoreContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
   },
-  icon: {
-    marginLeft: 10,
-    marginRight: 10,
+  score: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#DABB00",
+  },
+  scoreTotal: {
+    fontSize: 18,
+    color: "#333",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E7F3FF",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    elevation: 1,
   },
   progressContainer: {
     flex: 1,
-    height: 25,
-    backgroundColor: "#CEE3FF",
+    height: 20,
+    backgroundColor: "#FFF",
     borderRadius: 5,
     justifyContent: "center",
+    marginRight: 10,
     position: "relative",
-    marginHorizontal: 10,
   },
   progressBar: {
     position: "absolute",
     height: "100%",
-    backgroundColor: "#7BDFF2",
+    backgroundColor: "#DABB00",
     borderRadius: 5,
   },
   progressText: {
     fontWeight: "bold",
     textAlign: "center",
     zIndex: 1,
+    color: "#333",
   },
-  details: {
-    width: "90%",
-    height: "60%",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#000",
-    borderRadius: 5,
-    alignSelf: "center",
+  detailText: {
+    flex: 2,
+    fontSize: 14,
+    color: "#555",
+    textAlign: "center",
   },
-  detailsText: {
+  emptyText: {
     textAlign: "center",
     color: "#555",
-    padding: 10,
+    fontSize: 14,
+    marginTop: 20,
   },
 });

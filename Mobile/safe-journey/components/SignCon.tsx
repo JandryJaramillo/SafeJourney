@@ -11,6 +11,7 @@ import {
 import { Link } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
 import Icon from "react-native-vector-icons/FontAwesome";
+import Logo from "../assets/logo.png";
 
 const SignCon = () => {
   const [signals, setSignals] = useState([]);
@@ -77,7 +78,10 @@ const SignCon = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Señales de Tránsito para Conductores</Text>
+      <View style={styles.header}>
+        <Image style={styles.logo} source={Logo} />
+        <Text style={styles.title}>SEÑALES DE TRÁNSITO PARA VEHÍCULOS</Text>
+      </View>
       <View style={styles.scrollContainer}>
         <ScrollView contentContainerStyle={styles.scrol}>
           {signals.map((signal) => (
@@ -125,12 +129,51 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDF5F9",
     paddingBottom: 20,
   },
+  header: {
+    backgroundColor: "#52C5E2",
+    paddingVertical: 20,
+    height: 90,
+    width: "100%",
+  },
   title: {
-    fontSize: 22,
-    marginVertical: 20,
-    textAlign: "center",
+    fontSize: 14,
     fontWeight: "bold",
-    top: 20,
+    color: "#FFF",
+    marginTop: 20,
+    left: 80,
+  },
+  logo: {
+    height: 50,
+    width: 50,
+    position: "absolute",
+    left: 20,
+    top: 30,
+  },
+  scrollContainer: {
+    flex: 1,
+    width: "90%",
+    marginTop: 10,
+  },
+  scrol: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingBottom: 20,
+  },
+  items: {
+    width: "48%",
+    alignItems: "center",
+    marginVertical: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderColor: "#D1E9F5",
+    borderWidth: 1,
+    padding: 15,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   signImage: {
     width: "100%",
@@ -143,54 +186,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     fontWeight: "bold",
+    color: "#666",
   },
   likeButton: {
     marginVertical: 10,
   },
-  liked: {
-    backgroundColor: "#FFD700", // Amarillo para el botón "Me Gusta"
-  },
-  likeText: {
-    color: "black",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
   detailButton: {
-    backgroundColor: "#B2F2BB",
+    backgroundColor: "#007AFF",
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
     alignItems: "center",
   },
   buttonText: {
-    color: "black",
+    color: "#FFF",
     fontWeight: "bold",
-  },
-  scrol: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between", // Distribución uniforme
-    paddingBottom: 20,
-  },
-  items: {
-    width: "48%",
-    alignItems: "center",
-    marginVertical: 10,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderColor: "#d3d3d3",
-    borderWidth: 1,
-    padding: 15,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  scrollContainer: {
-    flex: 1,
-    width: "90%",
-    marginTop: 10,
   },
   loader: {
     flex: 1,
@@ -199,11 +209,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDF5F9",
   },
   button: {
-    backgroundColor: "#7BDFF2",
+    backgroundColor: "#007AFF",
     padding: 10,
     borderRadius: 5,
-    marginTop: 10,
-    marginBottom: 30,
+    marginVertical: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
 });
-

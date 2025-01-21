@@ -14,6 +14,7 @@ import Mapbox, {
   Images,
   SymbolLayer,
   ShapeSource,
+  LineLayer,
 } from "@rnmapbox/maps";
 import peaton from "../assets/peaton.png";
 import * as Location from "expo-location";
@@ -108,7 +109,7 @@ const Walk: React.FC = () => {
   };
 
   const estaEnCalle = () => {
-    const umbralDistanciaCalle = 0.00005; // ~5 metros
+    const umbralDistanciaCalle = 0.00002; // ~5 metros
     for (let i = 0; i < streetCoordinates.length - 1; i++) {
       const puntoInicio = streetCoordinates[i];
       const puntoFin = streetCoordinates[i + 1];
@@ -309,27 +310,25 @@ const Walk: React.FC = () => {
             animationMode={"flyTo"}
             animationDuration={2000}
           />
-          {location && (
-            <ShapeSource
-              id="peatonSource"
-              shape={{
-                type: "Feature",
-                geometry: {
-                  type: "Point",
-                  coordinates: [location.longitude, location.latitude],
-                },
-                properties: {},
+          <ShapeSource
+            id="peatonSource"
+            shape={{
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [location.longitude, location.latitude],
+              },
+              properties: {},
+            }}
+          >
+            <SymbolLayer
+              id="peatonLayer"
+              style={{
+                iconImage: "peatonIcon",
+                iconSize: 0.5,
               }}
-            >
-              <SymbolLayer
-                id="peatonLayer"
-                style={{
-                  iconImage: "peatonIcon",
-                  iconSize: 0.5,
-                }}
-              />
-            </ShapeSource>
-          )}
+            />
+          </ShapeSource>
         </MapView>
       </View>
       <Pressable
@@ -353,8 +352,8 @@ export default Walk;
 
 const styles = StyleSheet.create({
   mapCont: {
-    height: 770,
-    width: 410,
+    height: "100%",
+    width: "100%",
   },
   button: {
     backgroundColor: "#7BDFF2",

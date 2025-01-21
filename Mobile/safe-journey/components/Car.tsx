@@ -216,8 +216,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   mapCont: {
-    height: 770,
-    width: 410,
+    height: "100%",
+    width: "100%",
   },
   button: {
     backgroundColor: "#7BDFF2",
