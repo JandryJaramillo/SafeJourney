@@ -71,7 +71,7 @@ export default function SignDet() {
       {/* Header */}
       <View style={styles.header}>
         <Image style={styles.logo} source={Logo} />
-        <Text style={styles.headerTitle}>DETALLE DE LA SEÑAL</Text>
+        <Text style={styles.headerTitle}>DETALLES</Text>
       </View>
 
       {/* Signal Details */}
@@ -106,36 +106,38 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#52C5E2",
-    height: 90,
-    width: "100%",
-    marginBottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFF",
-    top: 15,
-    left: 90,
+    paddingVertical: 20,
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
+    marginTop: 30,
+    marginBottom: 20
   },
   logo: {
     height: 50,
     width: 50,
-    position: "absolute",
-    left: 20,
-    top: 30,
+    resizeMode: "contain"
+  },
+  headerTitle: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+    right: 10
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   image: {
-    width: "90%",
-    height: 200,
+    width: "70%",
+    height: 150,
     marginBottom: 20,
   },
   descriptionContainer: {
@@ -158,7 +160,8 @@ const styles = StyleSheet.create({
     height: 45,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 50,
+    marginBottom: 10
   },
   buttonText: {
     color: "#FFF",

@@ -71,7 +71,7 @@ export default function LawDet() {
       {/* Header */}
       <View style={styles.header}>
         <Image style={styles.logo} source={Logo} />
-        <Text style={styles.headerTitle}>DETALLE DE LA LEY</Text>
+        <Text style={styles.headerTitle}>DETALLES</Text>
       </View>
 
       {/* Law details */}
@@ -101,29 +101,30 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#52C5E2",
-    height: 90,
-    width: "100%",
-    marginBottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFF",
-    top: 15,
-    left: 90
+    paddingVertical: 20,
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
+    marginBottom: 10,
+    marginTop: 20
   },
   logo: {
     height: 50,
     width: 50,
-    position: "absolute",
-    left: 20,
-    top: 30,
-    },
+    resizeMode: "contain"
+  },
+  headerTitle: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
     marginTop: 10,

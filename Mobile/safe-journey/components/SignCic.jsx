@@ -78,7 +78,7 @@ const SignCic = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Image style={styles.logo} source={Logo} />
-        <Text style={styles.title}>SEÑALES DE TRÁNSITO PARA CICLISTAS</Text>
+        <Text style={styles.title}>CICLISTAS</Text>
       </View>
       <View style={styles.scrollContainer}>
         <ScrollView contentContainerStyle={styles.scrol}>
@@ -130,22 +130,26 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#52C5E2",
     paddingVertical: 20,
-    height: 90,
-    width: "100%",
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#FFF",
-    marginTop: 20,
-    left: 80,
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
+    marginTop: 20
   },
   logo: {
     height: 50,
     width: 50,
-    position: "absolute",
-    left: 20,
-    top: 30,
+    resizeMode: "contain"
+  },
+  title: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+    right: 20
   },
   scrollContainer: {
     flex: 1,
@@ -210,7 +214,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#007AFF",
     padding: 10,
     borderRadius: 5,
-    marginVertical: 10,
+    marginTop: 10,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },

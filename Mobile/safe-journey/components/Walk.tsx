@@ -14,7 +14,6 @@ import Mapbox, {
   Images,
   SymbolLayer,
   ShapeSource,
-  LineLayer,
 } from "@rnmapbox/maps";
 import peaton from "../assets/peaton.png";
 import * as Location from "expo-location";
@@ -109,7 +108,7 @@ const Walk: React.FC = () => {
   };
 
   const estaEnCalle = () => {
-    const umbralDistanciaCalle = 0.00002; // ~5 metros
+    const umbralDistanciaCalle = 0.0000135; // ~1.5 metros
     for (let i = 0; i < streetCoordinates.length - 1; i++) {
       const puntoInicio = streetCoordinates[i];
       const puntoFin = streetCoordinates[i + 1];
@@ -137,6 +136,9 @@ const Walk: React.FC = () => {
       return diffLat < 0.00002 && diffLng < 0.00002; // Menos de 2.2 metros
     });
 
+    console.log("Evaluar cercanía - Ubicación actual:", location);
+    console.log("¿Está cerca de un paso de cebra?", isNearCrosswalk);
+
     if (isNearCrosswalk) {
       Toast.show({
         type: "info",
@@ -144,7 +146,6 @@ const Walk: React.FC = () => {
         text2: "Está utilizando un paso de cebra.",
       });
     } else if (!estaEnCalle()) {
-      // No está en la calle, no penalizar
       Toast.show({
         type: "info",
         text1: "¡Todo bien!",
@@ -156,54 +157,43 @@ const Walk: React.FC = () => {
         text1: "¡Atención!",
         text2: "Está cruzando fuera de un paso de cebra.",
       });
-      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 10, 0));
+      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 5, 0));
     }
   };
 
   useEffect(() => {
     fetchCrosswalks();
-  }, []);
-
-  useEffect(() => {
-    const startTrackingLocation = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+    Location.requestForegroundPermissionsAsync().then(({ status }) => {
+      if (status === "granted") {
+        Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setLocation({ latitude, longitude });
+          }
+        );
+      } else {
         Alert.alert(
           "Permiso denegado",
-          "Por favor habilite el acceso a la ubicación en la configuración del dispositivo."
+          "Habilite la ubicación en configuración."
         );
-        return;
       }
-
-      await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({ latitude, longitude });
-        }
-      );
-    };
-
-    startTrackingLocation();
+    });
   }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-
     if (evaluacionIniciada) {
       setStartTime(new Date());
       evaluarCercania();
-      interval = setInterval(() => {
-        evaluarCercania();
-      }, 10000);
+      interval = setInterval(() => evaluarCercania(), 10000);
     } else if (interval) {
       clearInterval(interval);
     }
-
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -213,9 +203,12 @@ const Walk: React.FC = () => {
     setEvaluacionIniciada(false);
 
     const endTime = new Date(); // Tiempo de finalización
-    const duration = startTime
-      ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
-      : 0;
+    const duration = Math.floor(
+      (endTime.getTime() - startTime.getTime()) / 1000
+    );
+    console.log("Tiempo de inicio:", startTime);
+    console.log("Tiempo de finalización:", endTime);
+    console.log("Duración calculada (segundos):", duration);
     const errores = puntaje < 100 ? ["No cruzar la calle correctamente"] : [];
     const detalles = `Puntaje: ${puntaje}/100, Errores: ${errores.join(
       ", "
@@ -271,7 +264,6 @@ const Walk: React.FC = () => {
         text2: `Tu puntaje final es: ${puntaje}/100. Duración: ${duration}s`,
       });
     } catch (error) {
-      console.error("Error al guardar la evaluación:", error);
       Toast.show({
         type: "error",
         text1: "Error",

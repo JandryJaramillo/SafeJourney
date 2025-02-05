@@ -151,27 +151,32 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#52C5E2",
     paddingVertical: 20,
-    alignItems: "center",
-    height: 90
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
+    marginTop: 20
+  },
+  logo: {
+    height: 50,
+    width: 50,
+    resizeMode: "contain"
   },
   title: {
+    flex: 1, // Toma el espacio disponible
     fontSize: 20,
     fontWeight: "bold",
     color: "#FFF",
-    marginTop: 20
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+    right: 20
   },
   titulo: {
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5
-  },
-  logo: {
-    height: 50,
-    width: 50,
-    left: 20,
-    top: 30,
-    position: "absolute"
   },
   scrollContainer: {
     marginLeft: 20,

@@ -59,7 +59,7 @@ const LawCon = () => {
       {/* Header */}
       <View style={styles.header}>
         <Image style={styles.logo} source={Logo} />
-        <Text style={styles.title}>LEYES PARA LOS CONDUCTORES</Text>
+        <Text style={styles.title}>CONDUCTORES</Text>
       </View>
 
       {/* List */}
@@ -91,24 +91,28 @@ const styles = StyleSheet.create({
     paddingTop: 30,
   },
   header: {
-    backgroundColor: "#52C5E2",    
+    backgroundColor: "#52C5E2",
+    paddingVertical: 20,
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
     height: 70,
-    width: "100%",
-    marginBottom: 20
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#FFF",
-    top: 20,
-    left: 90
+    marginBottom: 10
   },
   logo: {
     height: 50,
     width: 50,
-    position: "absolute",
-    left: 20,
-    top: 10,
+    resizeMode: "contain"
+  },
+  title: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+    right: 20
   },
   list: {
     height: "60%",

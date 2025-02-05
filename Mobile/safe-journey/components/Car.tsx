@@ -8,10 +8,10 @@ import Mapbox, {
   ShapeSource,
 } from "@rnmapbox/maps";
 import * as Location from "expo-location";
-import Toast from "react-native-toast-message";
 import Velocidad from "./Velocidad";
 import firestore from "@react-native-firebase/firestore";
 import carro from "../assets/car.png";
+import Toast from "react-native-toast-message";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -19,7 +19,7 @@ Mapbox.setTelemetryEnabled(false);
 const Car: React.FC = () => {
   const [speed, setSpeed] = useState(0);
   const [evaluacionIniciada, setEvaluacionIniciada] = useState(false);
-  const [score, setScore] = useState(100);
+  const [puntaje, setPuntaje] = useState(100);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [location, setLocation] = useState({
     latitude: -3.9954684994999354,
@@ -38,6 +38,8 @@ const Car: React.FC = () => {
         return;
       }
 
+      let lastToastTime = 0;
+
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -51,13 +53,19 @@ const Car: React.FC = () => {
           setSpeed(speedInKmh);
           setStartTime(new Date());
 
-          if (evaluacionIniciada && speedInKmh > 50) {
-            setScore((prevScore) => Math.max(prevScore - 10, 0)); // Reducir puntaje
+          const currentTime = Date.now();
+          if (
+            evaluacionIniciada &&
+            speedInKmh > 50 &&
+            currentTime - lastToastTime > 5000
+          ) {
+            setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 5, 0)); // Reducir puntaje
             Toast.show({
-              type: "warning",
+              type: "error",
               text1: "Advertencia de Velocidad",
               text2: "Está excediendo el límite de velocidad.",
             });
+            lastToastTime = currentTime;
           }
         }
       );
@@ -74,74 +82,53 @@ const Car: React.FC = () => {
       ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
       : 0;
 
-    const errores: string[] = [];
-    const mensaje =
-      speed > 50 ? `Exceso de velocidad: ${speed.toFixed(1)} km/h` : null;
-    if (mensaje) errores.push(mensaje);
+    // Determinar errores según el puntaje
+    const errores = [];
+    if (puntaje < 100) {
+      errores.push("Exceso de velocidad");
+    }
 
-    const detalles = `Puntaje: ${score}/100, Errores: ${errores.join(
+    if (errores.length === 0) {
+      errores.push("Sin errores detectados");
+    }
+
+    // Crear el string con puntaje y errores
+    const detalles = `Puntaje: ${puntaje}/100, Errores: ${errores.join(
       ", "
     )}, Duración: ${duration}s`;
-    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato: YYYY-MM-DD
+
+    // Formatear la fecha actual
+    const fechaHoy = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
 
     try {
       const evaluacionesRef = firestore().collection("evaluaciones");
       const docRef = evaluacionesRef.doc(fechaHoy);
 
-      const docSnap = await docRef.get();
-
-      if (docSnap.exists) {
-        // Si el documento ya existe, obtenemos los detalles actuales
-        const data = docSnap.data();
-        const detallesExistentes = data?.detalles || [];
-        const puntajesExistentes = data?.puntajes || [];
-
-        // Enumerar los detalles para evitar duplicados
-        let contadorDetalles = 1;
-        let nuevoDetalle = detalles;
-
-        while (detallesExistentes.includes(nuevoDetalle)) {
-          contadorDetalles++;
-          nuevoDetalle = `${contadorDetalles}. ${detalles}`;
-        }
-
-        // Enumerar los puntajes para evitar duplicados
-        let contadorPuntajes = 1;
-        let nuevoPuntaje = `${score}`;
-
-        while (puntajesExistentes.includes(nuevoPuntaje)) {
-          contadorPuntajes++;
-          nuevoPuntaje = `${score} (${contadorPuntajes})`;
-        }
-
-        // Actualizar el documento con los nuevos datos
-        await docRef.update({
-          detalles: firestore.FieldValue.arrayUnion(nuevoDetalle),
-          puntajes: firestore.FieldValue.arrayUnion(nuevoPuntaje),
-        });
-      } else {
-        // Si el documento no existe, lo creamos con el primer detalle y puntaje
-        await docRef.set({
-          detalles: [`${detalles}`],
-          puntajes: [`${score}`],
-        });
-      }
+      // Usar una sola operación de actualización/creación
+      await docRef.set(
+        {
+          detalles: firestore.FieldValue.arrayUnion(detalles),
+          puntajes: firestore.FieldValue.arrayUnion(puntaje.toString()),
+        },
+        { merge: true } // Merge asegura que no se sobrescriban datos existentes
+      );
 
       Toast.show({
         type: "success",
-        text1: "Evaluación Finalizada",
-        text2: `Tu puntaje final es: ${score}/100. Duración: ${duration}s`,
+        text1: "Evaluación registrada",
+        text2: `Tu puntaje final es: ${puntaje}/100. Duración: ${duration}s`,
       });
     } catch (error) {
       console.error("Error al guardar la evaluación:", error);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "No se pudo guardar la evaluación.",
+        text2: `No se pudo guardar la evaluación: ${error.message}`,
       });
     }
-    setStartTime(null);
-    setScore(100);
+
+    // Reiniciar puntaje
+    setPuntaje(100);
   };
 
   return (

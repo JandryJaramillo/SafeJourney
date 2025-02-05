@@ -65,7 +65,7 @@ export function BitacoraDet() {
   const getIconByCategory = (detalle) => {
     if (detalle.toLowerCase().includes("ciclovía")) {
       return "bicycle";
-    } else if (detalle.toLowerCase().includes("cebra")) {
+    } else if (detalle.toLowerCase().includes("calle")) {
       return "walk";
     } else if (detalle.toLowerCase().includes("velocidad")) {
       return "car";
@@ -88,18 +88,18 @@ export function BitacoraDet() {
       <View style={styles.main}>
         <View style={styles.summaryContainer}>
           <View style={styles.row}>
-            <Text style={styles.label}>Fecha de la evaluación</Text>
+            <Text style={styles.label}>Fecha de la evaluación:</Text>
             <Text style={styles.value}>{fecha}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Calificación</Text>
+            <Text style={styles.label}>Calificación:</Text>
             <View style={styles.scoreContainer}>
               <Text style={styles.score}>{puntuacionPromedio.toFixed(0)}</Text>
               <Text style={styles.scoreTotal}>/100</Text>
             </View>
           </View>
         </View>
-
+        <View style={styles.flat}>
         <FlatList
           data={detalles}
           keyExtractor={(item, index) => index.toString()}
@@ -123,6 +123,7 @@ export function BitacoraDet() {
             <Text style={styles.emptyText}>No hay detalles registrados.</Text>
           }
         />
+        </View>
       </View>
     </View>
   );
@@ -134,31 +135,37 @@ const styles = StyleSheet.create({
     backgroundColor: "#F6F8FB",
   },
   header: {
-    alignItems: "center",
-    position: "relative",
     backgroundColor: "#52C5E2",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    height: 90,
+    paddingVertical: 20,
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
+    top: 20, 
+    marginBottom: 10
   },
-  backIcon: {
-    position: "absolute",
-    top: 40,
-    right: 30,
-    zIndex: 1,
-  },
-  headerTitle: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    top: 30,
+  flat:{
+    height: "65%"
   },
   logo: {
     height: 50,
     width: 50,
-    left: 20,
-    top: 30,
-    position: "absolute",
+    resizeMode: "contain"
+  },
+  headerTitle: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+  },
+  backIcon: {
+    height: 50,
+    width: 50,
+    marginRight: 10,
+    marginTop: 15
   },
   main: {
     flex: 1,
@@ -185,6 +192,8 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 16,
     color: "#333",
+    flexShrink: 1,
+    maxWidth: "65%",
   },
   scoreContainer: {
     flexDirection: "row",
@@ -206,7 +215,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
-    elevation: 1,
+    elevation: 1,    
   },
   progressContainer: {
     flex: 1,

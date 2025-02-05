@@ -134,15 +134,15 @@ export function Bitacora() {
       <StatusBar barStyle={"dark-content"} backgroundColor="#FFF" />
       <View style={styles.header}>
         <Image source={logo} style={styles.logo} />
-        <Text style={styles.title}>REPORTES</Text>
+        <Text style={styles.headerTitle}>REPORTES</Text>
+        <Link asChild href="/profilex">
+          <Pressable style={styles.backIcon}>
+            <Icon name="arrow-back-circle-outline" size={36} color="#FFF" />
+          </Pressable>
+        </Link>
       </View>
-      <Link asChild href="/profilex">
-        <Pressable style={styles.backIcon}>
-          <Icon name="arrow-back-circle-outline" size={36} color="#FFF" />
-        </Pressable>
-      </Link>
       <Text style={styles.titulo}>Reportes de evaluación</Text>
-      <View style={styles.table}>      
+      <View style={styles.table}>
         <View style={styles.rowHeader}>
           <Text style={styles.headerCell}>FECHA</Text>
           <Text style={styles.headerCell}>PUNTUACIÓN</Text>
@@ -166,20 +166,30 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#52C5E2",
     paddingVertical: 20,
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
   },
   logo: {
     height: 50,
     width: 50,
-    left: 20,
-    top: 10,
-    position: "absolute",
+    resizeMode: "contain"
   },
-  title: {
-    fontSize: 22,
+  headerTitle: {
+    flex: 1, // Toma el espacio disponible
+    fontSize: 20,
     fontWeight: "bold",
     color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+  },
+  backIcon: {
+    height: 50,
+    width: 50,
+    marginRight: 10,
+    marginTop: 15
   },
   titulo: {
     fontSize: 18,
@@ -187,19 +197,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
-  backIcon: {
-    position: "absolute",
-    top: 40,
-    right: 30,
-    zIndex: 1,
-  },
   table: {
     backgroundColor: "#E7F3FF",
     width: "90%",
     borderRadius: 10,
-    marginTop: 20,
+    marginTop: 10,
     elevation: 3,
     marginLeft: 20,
+    height: "68%"
   },
   row: {
     flexDirection: "row",
@@ -252,7 +257,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   button: {
     backgroundColor: "#007AFF",

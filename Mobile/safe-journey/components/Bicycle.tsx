@@ -18,7 +18,7 @@ import Toast from "react-native-toast-message";
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
 
-const cicloviasGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
+const cicloviasGeoJSON2: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
   type: "FeatureCollection",
   features: [
     {
@@ -28,11 +28,11 @@ const cicloviasGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
         type: "Polygon",
         coordinates: [
           [
-            [-79.1983461270052, -3.9954684994999354],
-            [-79.19826073394627, -3.9959840193980654],
-            [-79.19824508663571, -3.9959815762653506],
-            [-79.19833003768031, -3.995466056365572],
-            [-79.1983461270052, -3.9954684994999354],
+            [-79.19834982078858, -3.995451006456861],
+            [-79.19833305539244, -3.9954496733988236],
+            [-79.19824018773642, -3.9960087598881415],
+            [-79.19825897200226, -3.9960105372974084],
+            [-79.19834982078858, -3.995451006456861],
           ],
         ],
       },
@@ -76,11 +76,11 @@ const cicloviasGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
         type: "Polygon",
         coordinates: [
           [
-            [-79.1980977985895, -3.9979247093544217],
-            [-79.19787375270104, -4.000119685441902],
-            [-79.19785833371016, -4.000117229256048],
-            [-79.19808170184321, -3.9979242651489955],
-            [-79.1980977985895, -3.9979247093544217],
+            [-79.19809923482754, -3.997923410603846],
+            [-79.19808225650573, -3.9979241943806443],
+            [-79.19785886986232, -4.000117475445549],
+            [-79.19787494476911, -4.000123568401236],
+            [-79.19809923482754, -3.997923410603846],
           ],
         ],
       },
@@ -92,11 +92,11 @@ const cicloviasGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
         type: "Polygon",
         coordinates: [
           [
-            [-79.19787375270104, -4.000119685441902],
-            [-79.19772702172082, -4.001124090555692],
-            [-79.19774333936535, -4.001124090555692],
-            [-79.19785833371016, -4.000117229256048],
-            [-79.19787375270104, -4.000119685441902],
+            [-79.19787494476911, -4.000123568401236],
+            [-79.19785671389984, -4.000115808435396],
+            [-79.19772649815037, -4.001123481223203],
+            [-79.19774393388279, -4.001125480796517],
+            [-79.19787494476911, -4.000123568401236],
           ],
         ],
       },
@@ -108,17 +108,73 @@ const cicloviasGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
         type: "Polygon",
         coordinates: [
           [
-            [-79.19772702172082, -4.001124090555692],
-            [-79.19768872417231, -4.002242364343957],
-            [-79.1976719642949, -4.002240352366101],
-            [-79.19774333936535, -4.001124090555692],
-            [-79.19772702172082, -4.001124090555692],
+            [-79.19774428732194, -4.001125699641449],
+            [-79.19772572006767, -4.001122405330804],
+            [-79.1976952952244, -4.00153858241886],
+            [-79.19771206040227, -4.001539915467077],
+            [-79.19774428732194, -4.001125699641449],
+          ],
+        ],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { name: "Sección 7" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-79.19771206040227, -4.001539915467077],
+            [-79.1976952952244, -4.00153858241886],
+            [-79.19767250854008, -4.002242253936259],
+            [-79.19768927565946, -4.002242253936259],
+            [-79.19771206040227, -4.001539915467077],
+          ],
+        ],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { name: "Sección 8" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-79.19768927565946, -4.002242253936259],
+            [-79.19767250854008, -4.002242253936259],
+            [-79.19758888894937, -4.0029482637362435],
+            [-79.19760634620401, -4.002950722677667],
+            [-79.19768927565946, -4.002242253936259],
           ],
         ],
       },
     },
   ],
 };
+
+function expandPolygons(geojson, bufferDistance) {
+  const expandedFeatures = geojson.features.map((feature) => {
+    if (feature.geometry.type === "Polygon") {
+      const polygon = turf.polygon(feature.geometry.coordinates);
+      const buffered = turf.buffer(polygon, bufferDistance, {
+        units: "meters",
+      });
+      return {
+        ...feature,
+        geometry: buffered.geometry,
+      };
+    }
+    return feature;
+  });
+
+  return {
+    ...geojson,
+    features: expandedFeatures,
+  };
+}
+
+// Aumenta en metros el ancho de las ciclovias
+const cicloviasGeoJSON = expandPolygons(cicloviasGeoJSON2, 1.5);
 
 const Bicycle: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -133,7 +189,13 @@ const Bicycle: React.FC = () => {
     latitude: -3.9954684994999354,
     longitude: -79.1983461270052,
   });
-
+/*
+  const handleMapPress = async (event: any) => {
+    const { geometry } = event;
+    const [longitude, latitude] = geometry.coordinates;
+    console.log(`Coordenadas clickeadas: ${longitude}, ${latitude}`);    
+  };
+*/
   useEffect(() => {
     const startTrackingLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -178,6 +240,9 @@ const Bicycle: React.FC = () => {
       return false;
     });
 
+    console.log("Evaluar cercanía - Ubicación actual:", location);
+    console.log("¿dentro ciclovia?", isInside);
+
     if (isInside) {
       Toast.show({
         type: "success",
@@ -190,23 +255,19 @@ const Bicycle: React.FC = () => {
         text1: "¡Atención!",
         text2: "Está fuera de la ciclovía.",
       });
-      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 10, 0));
+      setPuntaje((prevPuntaje) => Math.max(prevPuntaje - 5, 0));
     }
   };
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-
     if (evaluacionIniciada) {
       setStartTime(new Date());
       evaluarCercania();
-      interval = setInterval(() => {
-        evaluarCercania();
-      }, 10000);
+      interval = setInterval(() => evaluarCercania(), 10000);
     } else if (interval) {
       clearInterval(interval);
     }
-
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -216,9 +277,12 @@ const Bicycle: React.FC = () => {
     setEvaluacionIniciada(false);
 
     const endTime = new Date();
-    const duration = startTime
-      ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
-      : 0;
+    const duration = Math.floor(
+      (endTime.getTime() - startTime.getTime()) / 1000
+    );
+    console.log("Tiempo de inicio:", startTime);
+    console.log("Tiempo de finalización:", endTime);
+    console.log("Duración calculada (segundos):", duration);
     const errores: string[] = [];
     const mensajeCiclovia = puntaje < 100 ? "Salir de la ciclovía" : null;
     if (mensajeCiclovia) errores.push(mensajeCiclovia);
@@ -314,6 +378,7 @@ const Bicycle: React.FC = () => {
           pitchEnabled={true}
           styleURL="mapbox://styles/spocks/cm298d95s008x01pb82mm0dhv"
           rotateEnabled={true}
+          //onPress={handleMapPress}
         >
           <Images images={{ carIcon: carro }} />
           <Camera

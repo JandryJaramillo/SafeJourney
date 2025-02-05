@@ -58,21 +58,27 @@ export function Profile() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#52C5E2", // Color similar al encabezado de "Sign"
+    backgroundColor: "#52C5E2",
     paddingVertical: 20,
-    alignItems: "center",
+    paddingHorizontal: 10, // Espaciado interno horizontal
+    flexDirection: "row", // Alinear elementos en fila
+    alignItems: "center", // Centrar verticalmente los elementos
+    justifyContent: "space-between", // Distribuir espacio entre elementos
+    height: 70,
   },
   logo: {
     height: 50,
     width: 50,
-    left: 20,
-    top: 10,
-    position: "absolute",
+    resizeMode: "contain"
   },
   title: {
+    flex: 1, // Toma el espacio disponible
     fontSize: 20,
     fontWeight: "bold",
     color: "#FFF",
+    textAlign: "center", // Centrar el texto
+    flexShrink: 1,
+    right: 20
   },
   profileContainer: {
     alignItems: "center",
