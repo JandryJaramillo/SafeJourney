@@ -19,6 +19,7 @@ import peaton from "../assets/peaton.png";
 import * as Location from "expo-location";
 import firestore from "@react-native-firebase/firestore";
 import Toast from "react-native-toast-message";
+import auth from "@react-native-firebase/auth";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -32,8 +33,8 @@ const Walk: React.FC = () => {
     latitude: number;
     longitude: number;
   }>({
-    latitude: -3.995537557649527,
-    longitude: -79.1983012505136,
+    latitude: 0,
+    longitude: 0,
   });
 
   const [crosswalks, setCrosswalks] = useState<{ lat: number; lng: number }[]>(
@@ -133,7 +134,7 @@ const Walk: React.FC = () => {
     const isNearCrosswalk = crosswalks.some((crosswalk) => {
       const diffLat = Math.abs(location.latitude - crosswalk.lat);
       const diffLng = Math.abs(location.longitude - crosswalk.lng);
-      return diffLat < 0.00002 && diffLng < 0.00002; // Menos de 2.2 metros
+      return diffLat < 0.00002 && diffLng < 0.00003; // Menos de 2.2 metros
     });
 
     console.log("Evaluar cercanía - Ubicación actual:", location);
@@ -202,6 +203,17 @@ const Walk: React.FC = () => {
   const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
 
+    const user = auth().currentUser;
+    if (!user || !user.email) {
+      Toast.show({
+        type: "error",
+        text1: "Error de autenticación",
+        text2: "No se pudo obtener el correo del usuario.",
+      });
+      return;
+    }
+    const email = user.email;
+
     const endTime = new Date(); // Tiempo de finalización
     const duration = Math.floor(
       (endTime.getTime() - startTime.getTime()) / 1000
@@ -253,8 +265,9 @@ const Walk: React.FC = () => {
       } else {
         // Si el documento no existe, lo creamos con el primer detalle y puntaje
         await docRef.set({
-          detalles: [detalles],
-          puntajes: [puntaje.toString()],
+          detalles: firestore.FieldValue.arrayUnion(detalles),
+          puntajes: firestore.FieldValue.arrayUnion(puntaje.toString()),
+          email: email
         });
       }
 
@@ -297,8 +310,8 @@ const Walk: React.FC = () => {
         >
           <Images images={{ peatonIcon: peaton }} />
           <Camera
-            zoomLevel={18}
-            centerCoordinate={[location.longitude, location.latitude]}
+            followZoomLevel={18}
+            followUserLocation={true}
             animationMode={"flyTo"}
             animationDuration={2000}
           />

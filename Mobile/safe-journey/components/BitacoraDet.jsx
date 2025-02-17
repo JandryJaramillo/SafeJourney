@@ -88,7 +88,7 @@ export function BitacoraDet() {
       <View style={styles.main}>
         <View style={styles.summaryContainer}>
           <View style={styles.row}>
-            <Text style={styles.label}>Fecha de la evaluación:</Text>
+            <Text style={styles.label}>Fecha:</Text>
             <Text style={styles.value}>{fecha}</Text>
           </View>
           <View style={styles.row}>

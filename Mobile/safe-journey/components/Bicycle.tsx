@@ -14,6 +14,7 @@ import * as Location from "expo-location";
 import * as turf from "@turf/turf";
 import firestore from "@react-native-firebase/firestore";
 import Toast from "react-native-toast-message";
+import auth from "@react-native-firebase/auth";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -186,10 +187,10 @@ const Bicycle: React.FC = () => {
     latitude: number;
     longitude: number;
   }>({
-    latitude: -3.9954684994999354,
-    longitude: -79.1983461270052,
+    latitude: 0,
+    longitude: 0,
   });
-/*
+  /*
   const handleMapPress = async (event: any) => {
     const { geometry } = event;
     const [longitude, latitude] = geometry.coordinates;
@@ -276,6 +277,17 @@ const Bicycle: React.FC = () => {
   const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
 
+    const user = auth().currentUser;
+    if (!user || !user.email) {
+      Toast.show({
+        type: "error",
+        text1: "Error de autenticación",
+        text2: "No se pudo obtener el correo del usuario.",
+      });
+      return;
+    }
+    const email = user.email;
+
     const endTime = new Date();
     const duration = Math.floor(
       (endTime.getTime() - startTime.getTime()) / 1000
@@ -336,8 +348,9 @@ const Bicycle: React.FC = () => {
       } else {
         // Si el documento no existe, lo creamos con el primer detalle y puntuación
         await docRef.set({
-          detalles: [`${detalles}`],
-          puntajes: [`${puntaje}`],
+          detalles: firestore.FieldValue.arrayUnion(detalles),
+          puntajes: firestore.FieldValue.arrayUnion(puntaje.toString()),
+          email: email
         });
       }
 
@@ -382,8 +395,8 @@ const Bicycle: React.FC = () => {
         >
           <Images images={{ carIcon: carro }} />
           <Camera
-            zoomLevel={18}
-            centerCoordinate={[location.longitude, location.latitude]}
+            followZoomLevel={18}
+            followUserLocation={true}
             animationMode={"flyTo"}
             animationDuration={2000}
           />

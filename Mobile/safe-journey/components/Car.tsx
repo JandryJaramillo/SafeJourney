@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { StyleSheet, View, StatusBar, Text, Pressable } from "react-native";
 import Mapbox, {
   Camera,
@@ -12,6 +12,7 @@ import Velocidad from "./Velocidad";
 import firestore from "@react-native-firebase/firestore";
 import carro from "../assets/car.png";
 import Toast from "react-native-toast-message";
+import auth from "@react-native-firebase/auth";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 Mapbox.setTelemetryEnabled(false);
@@ -21,10 +22,12 @@ const Car: React.FC = () => {
   const [evaluacionIniciada, setEvaluacionIniciada] = useState(false);
   const [puntaje, setPuntaje] = useState(100);
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const [location, setLocation] = useState({
-    latitude: -3.9954684994999354,
-    longitude: -79.1983461270052,
-  });
+  const [location, setLocation] = useState<{
+    latitude: number | null;
+    longitude: number | null;
+  }>({ latitude: null, longitude: null });
+  const [heading, setHeading] = useState(0);
+  const cameraRef = useRef<Camera>(null);
 
   useEffect(() => {
     const startTrackingLocationAndSpeed = async () => {
@@ -65,17 +68,42 @@ const Car: React.FC = () => {
               text1: "Advertencia de Velocidad",
               text2: "Está excediendo el límite de velocidad.",
             });
+
+            // Monitorear el rumbo (heading)
+            Location.watchHeadingAsync((headingData) => {
+              const newHeading = headingData.trueHeading; // Rumbo en grados (0°-360°)
+              setHeading(newHeading);
+
+              // Aplicar el rumbo a la cámara del mapa
+              cameraRef.current?.setCamera({
+                heading: newHeading,
+                animationDuration: 500,
+              });
+            });
+
             lastToastTime = currentTime;
           }
         }
       );
     };
 
+    // Iniciar la localización y velocidad
     startTrackingLocationAndSpeed();
   }, [evaluacionIniciada]);
 
   const finalizarEvaluacion = async () => {
     setEvaluacionIniciada(false);
+
+    const user = auth().currentUser;
+    if (!user || !user.email) {
+      Toast.show({
+        type: "error",
+        text1: "Error de autenticación",
+        text2: "No se pudo obtener el correo del usuario.",
+      });
+      return;
+    }
+    const email = user.email;
 
     const endTime = new Date();
     const duration = startTime
@@ -109,6 +137,7 @@ const Car: React.FC = () => {
         {
           detalles: firestore.FieldValue.arrayUnion(detalles),
           puntajes: firestore.FieldValue.arrayUnion(puntaje.toString()),
+          email: email
         },
         { merge: true } // Merge asegura que no se sobrescriban datos existentes
       );
@@ -147,14 +176,12 @@ const Car: React.FC = () => {
           rotateEnabled={true}
         >
           <Images images={{ carIcon: carro }} />
-          {location ? (
-            <Camera
-              zoomLevel={18}
-              centerCoordinate={[location.longitude, location.latitude]}
-              animationMode={"flyTo"}
-              animationDuration={2000}
-            />
-          ) : null}
+          <Camera
+            ref={cameraRef}
+            followUserLocation={true}
+            followUserMode={Mapbox.UserTrackingMode.FollowWithCourse}
+            followZoomLevel={18}
+          />
           {location && (
             <ShapeSource
               id="carSource"
@@ -172,6 +199,7 @@ const Car: React.FC = () => {
                 style={{
                   iconImage: "carIcon",
                   iconSize: 0.1,
+                  iconRotate: heading,
                 }}
               />
             </ShapeSource>

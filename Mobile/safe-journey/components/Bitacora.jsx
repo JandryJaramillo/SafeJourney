@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
 import Icon from "react-native-vector-icons/Ionicons";
 import logo from "../assets/logo.png";
 
@@ -23,7 +24,16 @@ export function Bitacora() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const evaluacionesRef = firestore().collection("evaluaciones");
+        const currentUser = auth().currentUser;
+        if (!currentUser) {
+          console.error("No hay usuario autenticado");
+          return;
+        }
+
+        const evaluacionesRef = firestore()
+          .collection("evaluaciones")
+          .where("email", "==", currentUser.email); // Filtrar por email
+
         const snapshot = await evaluacionesRef.get();
 
         const evaluacionesData = snapshot.docs.map((doc) => {
@@ -166,30 +176,30 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#52C5E2",
     paddingVertical: 20,
-    paddingHorizontal: 10, // Espaciado interno horizontal
-    flexDirection: "row", // Alinear elementos en fila
-    alignItems: "center", // Centrar verticalmente los elementos
-    justifyContent: "space-between", // Distribuir espacio entre elementos
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: 70,
   },
   logo: {
     height: 50,
     width: 50,
-    resizeMode: "contain"
+    resizeMode: "contain",
   },
   headerTitle: {
-    flex: 1, // Toma el espacio disponible
+    flex: 1,
     fontSize: 20,
     fontWeight: "bold",
     color: "#FFF",
-    textAlign: "center", // Centrar el texto
+    textAlign: "center",
     flexShrink: 1,
   },
   backIcon: {
     height: 50,
     width: 50,
     marginRight: 10,
-    marginTop: 15
+    marginTop: 15,
   },
   titulo: {
     fontSize: 18,
@@ -204,7 +214,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     elevation: 3,
     marginLeft: 20,
-    height: "68%"
+    height: "68%",
   },
   row: {
     flexDirection: "row",
